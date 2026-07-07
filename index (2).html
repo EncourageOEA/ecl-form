@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>みんなの居場所ECL｜来室記録</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface2: #f9f8f6;
+  --border: #e2ded8;
+  --border2: #ccc9c2;
+  --text: #1a1917;
+  --text2: #6b6860;
+  --text3: #9b9890;
+  --accent: #2d6a4f;
+  --accent-light: #e8f3ed;
+  --accent2: #c77d2f;
+  --accent2-light: #fdf3e4;
+  --danger: #b8302a;
+  --danger-light: #fdeeed;
+  --info: #1e5fa8;
+  --info-light: #eaf2fd;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+.shell { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 56px 1fr; min-height: 100vh; }
+
+header { grid-column: 1 / -1; background: var(--accent); color: #fff; display: flex; align-items: center; padding: 0 28px; gap: 16px; position: sticky; top: 0; z-index: 100; }
+header h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; }
+header .date-chip { margin-left: auto; font-family: var(--mono); font-size: 13px; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 99px; }
+header .save-btn { background: #fff; color: var(--accent); border: none; border-radius: var(--radius); padding: 7px 18px; font-size: 13px; font-weight: 700; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; transition: opacity .15s; margin-left: 12px; }
+header .save-btn:hover { opacity: 0.85; }
+header .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+nav { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; }
+.nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--text3); padding: 0 20px 6px; text-transform: uppercase; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; color: var(--text2); cursor: pointer; border-left: 3px solid transparent; transition: all .12s; text-decoration: none; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-light); color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.nav-dot.red { background: var(--danger); }
+.nav-divider { height: 1px; background: var(--border); margin: 12px 16px; }
+
+main { padding: 32px 40px 80px; overflow-y: auto; }
+
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 20px; overflow: hidden; }
+.section-header { display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.section-icon { width: 32px; height: 32px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.icon-green { background: var(--accent-light); }
+.icon-orange { background: var(--accent2-light); }
+.icon-red { background: var(--danger-light); }
+.icon-blue { background: var(--info-light); }
+.icon-gray { background: var(--surface); border: 1px solid var(--border); }
+.section-title { font-size: 14px; font-weight: 700; }
+.section-sub { font-size: 12px; color: var(--text3); margin-left: auto; }
+.badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; letter-spacing: 0.04em; }
+.badge-req { background: var(--accent-light); color: var(--accent); }
+.badge-inc { background: var(--danger-light); color: var(--danger); }
+.section-body { padding: 20px 24px; }
+
+.row { display: grid; gap: 16px; margin-bottom: 16px; }
+.row.col2 { grid-template-columns: 1fr 1fr; }
+.row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.row.col4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.row.col23 { grid-template-columns: 2fr 3fr; }
+.row.col32 { grid-template-columns: 3fr 2fr; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.field input, .field select, .field textarea { border: 1px solid var(--border2); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: var(--surface); outline: none; transition: border-color .15s, box-shadow .15s; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,106,79,0.08); }
+.field input[readonly] { background: var(--surface2); color: var(--text2); }
+.field textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
+.stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; text-align: center; }
+.stat-num { font-family: var(--mono); font-size: 28px; font-weight: 500; color: var(--text); }
+.stat-lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.stat-card.accent-card .stat-num { color: var(--accent); }
+
+.visitor-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.visitor-table th { font-size: 11px; font-weight: 700; color: var(--text3); text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.04em; }
+.visitor-table td { padding: 6px 6px; vertical-align: middle; }
+.visitor-table td input, .visitor-table td select { width: 100%; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: var(--surface); outline: none; transition: border-color .15s; }
+.visitor-table td input:focus, .visitor-table td select:focus { border-color: var(--accent); }
+.visitor-table tr:hover td { background: var(--surface2); }
+
+.btn-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; line-height: 1; padding: 0 4px; transition: color .12s; }
+.btn-del:hover { color: var(--danger); }
+.btn-add { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-family: 'Noto Sans JP', sans-serif; color: var(--accent); border: 1px dashed var(--accent); background: var(--accent-light); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; transition: all .12s; }
+.btn-add:hover { background: #d4eadc; }
+
+.conv-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; background: var(--surface2); position: relative; }
+.conv-card-header { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.conv-card-header input, .conv-card-header select { border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: var(--surface); outline: none; }
+.conv-card-header input:focus, .conv-card-header select:focus { border-color: var(--accent); }
+.conv-card textarea { width: 100%; border: 1px solid var(--border2); border-radius: 6px; padding: 8px 10px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: var(--surface); resize: vertical; min-height: 60px; outline: none; margin-bottom: 8px; }
+.conv-card textarea:focus { border-color: var(--accent); }
+.conv-card select.follow { border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 12px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: var(--surface); outline: none; }
+.conv-card-del { position: absolute; top: 12px; right: 12px; }
+
+/* 寄付 */
+.donation-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.donation-table th { font-size: 11px; font-weight: 700; color: var(--text3); text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.04em; }
+.donation-table td { padding: 6px 6px; vertical-align: middle; }
+.donation-table td input, .donation-table td select { width: 100%; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: var(--surface); outline: none; }
+.donation-table td input:focus, .donation-table td select:focus { border-color: var(--accent); }
+.donation-table tr:hover td { background: var(--surface2); }
+
+/* インシデント */
+.inc-check-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.inc-check-row:last-of-type { border-bottom: none; }
+.inc-check-row input[type=checkbox] { width: 16px; height: 16px; min-width: 16px; accent-color: var(--danger); cursor: pointer; margin-top: 2px; }
+.inc-check-row label { font-size: 13px; cursor: pointer; line-height: 1.5; }
+.inc-check-row .inc-tag { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 99px; white-space: nowrap; margin-left: auto; flex-shrink: 0; }
+.tag-privacy { background: #fde8f3; color: #a0306e; }
+.tag-safety { background: #fdeeed; color: var(--danger); }
+.tag-rights { background: #eaf2fd; color: var(--info); }
+.tag-facility { background: var(--accent2-light); color: var(--accent2); }
+.inc-detail-box { display: none; background: var(--danger-light); border: 1px solid #f0b8b6; border-radius: var(--radius); padding: 14px 16px; margin: 6px 0 6px 26px; }
+.inc-detail-box label { font-size: 11px; font-weight: 700; color: var(--danger); display: block; margin-bottom: 4px; letter-spacing: 0.04em; }
+.inc-detail-box textarea, .inc-detail-box select { width: 100%; border: 1px solid #f0b8b6; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: var(--text); background: #fff; resize: vertical; outline: none; margin-bottom: 10px; }
+.inc-detail-box textarea:focus, .inc-detail-box select:focus { border-color: var(--danger); }
+.inc-section-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+.inc-section-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+
+code { font-family: var(--mono); font-size: 11px; background: var(--surface2); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; }
+.status-msg { font-size: 12px; padding: 8px 12px; border-radius: var(--radius); margin-top: 10px; display: none; }
+.status-ok { background: var(--accent-light); color: var(--accent); border: 1px solid #b2d8bf; }
+.status-err { background: var(--danger-light); color: var(--danger); border: 1px solid #f5c6c4; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  <h1>みんなの居場所ECL｜来室記録</h1>
+  <span class="date-chip" id="header-date"></span>
+  <button class="save-btn" id="save-btn" onclick="submitForm()">📥 スプレッドシートに保存</button>
+</header>
+
+<nav>
+  <div style="margin-bottom:4px">
+    <div class="nav-label">記録セクション</div>
+    <a class="nav-item active" href="#sec-basic" onclick="setActive(this)"><span class="nav-dot"></span>開室情報</a>
+    <a class="nav-item" href="#sec-visitors" onclick="setActive(this)"><span class="nav-dot"></span>来室者</a>
+    <a class="nav-item" href="#sec-meal" onclick="setActive(this)"><span class="nav-dot"></span>食事・物品</a>
+    <a class="nav-item" href="#sec-donation" onclick="setActive(this)"><span class="nav-dot"></span>寄付受取</a>
+    <a class="nav-item" href="#sec-conv" onclick="setActive(this)"><span class="nav-dot"></span>生徒との会話</a>
+  </div>
+  <div class="nav-divider"></div>
+  <div style="margin-bottom:4px">
+    <div class="nav-label">管理・報告</div>
+    <a class="nav-item" href="#sec-incident" onclick="setActive(this)"><span class="nav-dot red"></span>インシデント記録</a>
+    <a class="nav-item" href="#sec-phone" onclick="setActive(this)"><span class="nav-dot"></span>入電・見学</a>
+    <a class="nav-item" href="#sec-handover" onclick="setActive(this)"><span class="nav-dot"></span>引き継ぎ</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- 開室情報 -->
+  <div class="section" id="sec-basic">
+    <div class="section-header">
+      <div class="section-icon icon-green">📅</div>
+      <span class="section-title">開室情報</span>
+      <span class="badge badge-req">必須</span>
+    </div>
+    <div class="section-body">
+      <div class="row col4">
+        <div class="field"><label>日付</label><input type="date" id="rec-date" oninput="updateDay()"></div>
+        <div class="field"><label>曜日</label><input type="text" id="rec-day" readonly></div>
+        <div class="field"><label>担当職員</label><input type="text" id="staff" placeholder="氏名を入力"></div>
+        <div class="field"><label>開室時間</label>
+          <select id="open-time">
+            <option>14:00〜20:00（通常）</option>
+            <option>14:00〜18:00（短縮）</option>
+            <option>その他</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 来室者 -->
+  <div class="section" id="sec-visitors">
+    <div class="section-header">
+      <div class="section-icon icon-green">👥</div>
+      <span class="section-title">来室者記録</span>
+      <span class="section-sub">申込済利用者のみ入室可</span>
+    </div>
+    <div class="section-body">
+      <table class="visitor-table">
+        <thead>
+          <tr>
+            <th style="width:220px">利用者名</th>
+            <th style="width:130px">区分</th>
+            <th>備考</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="visitor-list"></tbody>
+      </table>
+      <button class="btn-add" onclick="addVisitor()">＋ 来室者を追加</button>
+      <div class="divider"></div>
+      <div class="stats-row">
+        <div class="stat-card accent-card"><div class="stat-num" id="total-all">0</div><div class="stat-lbl">全体来室人数</div></div>
+        <div class="stat-card"><div class="stat-num" id="total-new">0</div><div class="stat-lbl">新規来室</div></div>
+        <div class="stat-card"><div class="stat-num" id="total-reg">0</div><div class="stat-lbl">申込済</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新規来室・申込書 -->
+  <div class="section" id="sec-newvisitor">
+    <div class="section-header">
+      <div class="section-icon icon-blue">📄</div>
+      <span class="section-title">新規来室・申込書対応</span>
+    </div>
+    <div class="section-body">
+      <table class="visitor-table">
+        <thead>
+          <tr>
+            <th style="width:220px">利用者名</th>
+            <th style="width:160px">申込書</th>
+            <th>備考・対応メモ</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="new-visitor-list"></tbody>
+      </table>
+      <button class="btn-add" onclick="addNewVisitor()">＋ 新規来室者を追加</button>
+    </div>
+  </div>
+
+  <!-- 食事・物品 -->
+  <div class="section" id="sec-meal">
+    <div class="section-header">
+      <div class="section-icon icon-orange">🍽️</div>
+      <span class="section-title">食事・物品記録</span>
+    </div>
+    <div class="section-body">
+      <div class="row col3">
+        <div class="field"><label>食事をした利用者数</label><input type="number" min="0" value="0" id="meal-users" oninput="calcMeals()"></div>
+        <div class="field"><label>作った食事人数</label><input type="number" min="0" value="0" id="meal-made" oninput="calcMeals()"></div>
+        <div class="field"><label>余り食数</label><input type="text" id="meal-left" readonly placeholder="自動計算"></div>
+      </div>
+      <div class="row col23">
+        <div class="field"><label>その日に買ったもの</label><input type="text" id="buy-items" placeholder="食材・消耗品など"></div>
+        <div class="field"><label>金額（円）</label><input type="number" min="0" id="buy-cost" placeholder="0"></div>
+      </div>
+      <div class="row col2">
+        <div class="field"><label>共同活動名</label><input type="text" id="activity" placeholder="例：料理・ボードゲーム・映画鑑賞"></div>
+        <div class="field"><label>参加人数</label><input type="number" min="0" id="activity-count" placeholder="0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 寄付受取 -->
+  <div class="section" id="sec-donation">
+    <div class="section-header">
+      <div class="section-icon icon-orange">🎁</div>
+      <span class="section-title">寄付受取記録</span>
+    </div>
+    <div class="section-body">
+      <table class="donation-table">
+        <thead>
+          <tr>
+            <th style="width:200px">寄付者・団体名</th>
+            <th style="width:130px">種別</th>
+            <th style="width:200px">内容・品目</th>
+            <th style="width:100px">数量・金額</th>
+            <th>備考・お礼対応</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="donation-list"></tbody>
+      </table>
+      <button class="btn-add" onclick="addDonation()">＋ 寄付を追加</button>
+    </div>
+  </div>
+
+  <!-- 会話記録 -->
+  <div class="section" id="sec-conv">
+    <div class="section-header">
+      <div class="section-icon icon-green">💬</div>
+      <span class="section-title">生徒との会話記録</span>
+    </div>
+    <div class="section-body">
+      <div id="conv-list"></div>
+      <button class="btn-add" onclick="addConv()">＋ 記録を追加</button>
+    </div>
+  </div>
+
+  <!-- インシデント -->
+  <div class="section" id="sec-incident">
+    <div class="section-header">
+      <div class="section-icon icon-red">🛡️</div>
+      <span class="section-title">インシデント記録</span>
+      <span class="badge badge-inc">重要</span>
+      <span class="section-sub">該当する項目にチェック→詳細を記入</span>
+    </div>
+    <div class="section-body">
+
+      <div class="inc-section-label">🔒 個人情報・プライバシー</div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-1" onchange="toggleInc('1',this.checked)">
+        <label for="inc-1">個人情報が他の利用者に聞こえる・見える状況があった（発言・呼び名など）</label>
+        <span class="inc-tag tag-privacy">プライバシー</span>
+      </div>
+      <div id="inc-1-box" class="inc-detail-box">
+        <label>状況・関係者・対応内容</label>
+        <textarea id="inc-1-detail" placeholder="どのような状況で情報が共有されたか。誰がどう対応したか。"></textarea>
+        <label>再発防止措置</label>
+        <textarea id="inc-1-action" placeholder="席の変更、声量注意、別室対応など具体的に記入"></textarea>
+      </div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-2" onchange="toggleInc('2',this.checked)">
+        <label for="inc-2">デスク・棚など施設内の個人情報書類が他者に見える状態だった</label>
+        <span class="inc-tag tag-privacy">プライバシー</span>
+      </div>
+      <div id="inc-2-box" class="inc-detail-box">
+        <label>状況・書類の種類・対応内容</label>
+        <textarea id="inc-2-detail" placeholder="どの書類が、どこに、どのように置かれていたか。対応内容を記入。"></textarea>
+        <label>再発防止措置</label>
+        <textarea id="inc-2-action" placeholder="書類の保管場所変更、施錠管理の徹底など"></textarea>
+      </div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-3" onchange="toggleInc('3',this.checked)">
+        <label for="inc-3">PCやタブレット画面に個人情報が表示されたまま放置されていた</label>
+        <span class="inc-tag tag-privacy">プライバシー</span>
+      </div>
+      <div id="inc-3-box" class="inc-detail-box">
+        <label>状況・対応内容</label>
+        <textarea id="inc-3-detail" placeholder="どの端末に何が表示されていたか。誰がいつ気づき対応したか。"></textarea>
+      </div>
+
+      <div class="inc-section-label">⚠️ 安全・身体的トラブル</div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-4" onchange="toggleInc('4',this.checked)">
+        <label for="inc-4">身体的トラブルがあった（暴力・威圧・けんか・ふざけすぎなど）</label>
+        <span class="inc-tag tag-safety">安全</span>
+      </div>
+      <div id="inc-4-box" class="inc-detail-box">
+        <label>状況・関係者・対応内容</label>
+        <textarea id="inc-4-detail" placeholder="何が起き、誰がどのように対応したか。負傷の有無も記入。"></textarea>
+        <label>緊急対応レベル</label>
+        <select id="inc-4-level"><option>軽微（注意で終了）</option><option>中程度（保護者連絡）</option><option>重大（警察・上長報告）</option></select>
+      </div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-5" onchange="toggleInc('5',this.checked)">
+        <label for="inc-5">子どもの体調不良・けが・事故があった</label>
+        <span class="inc-tag tag-safety">安全</span>
+      </div>
+      <div id="inc-5-box" class="inc-detail-box">
+        <label>症状・状況・対応内容（救急対応・保護者連絡の有無など）</label>
+        <textarea id="inc-5-detail" placeholder="いつ・誰が・どのような症状か。職員の対応と保護者連絡の有無。"></textarea>
+      </div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-6" onchange="toggleInc('6',this.checked)">
+        <label for="inc-6">施設内での不審者・不審行為・無断立ち入りがあった</label>
+        <span class="inc-tag tag-safety">安全</span>
+      </div>
+      <div id="inc-6-box" class="inc-detail-box">
+        <label>状況・対応内容</label>
+        <textarea id="inc-6-detail" placeholder="いつ・どのような人物・行為か。警察への連絡有無も記入。"></textarea>
+      </div>
+
+      <div class="inc-section-label">🤝 子どもの権利・不適切対応</div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-7" onchange="toggleInc('7',this.checked)">
+        <label for="inc-7">差別的・侮辱的・不適切な発言があった（職員・利用者問わず）</label>
+        <span class="inc-tag tag-rights">権利</span>
+      </div>
+      <div id="inc-7-box" class="inc-detail-box">
+        <label>発言概要・関係者・対応内容</label>
+        <textarea id="inc-7-detail" placeholder="誰が誰に対してどのような発言をしたか。職員の対応内容も記入。"></textarea>
+        <label>継続支援の必要性</label>
+        <select id="inc-7-level"><option>なし</option><option>要観察</option><option>保護者へ連絡</option><option>上長へ報告</option></select>
+      </div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-8" onchange="toggleInc('8',this.checked)">
+        <label for="inc-8">子どもへの不適切な関わり・境界線の問題が見受けられた（過剰な身体接触・特定の子どもへの依存など）</label>
+        <span class="inc-tag tag-rights">権利</span>
+      </div>
+      <div id="inc-8-box" class="inc-detail-box">
+        <label>状況・関係者・対応内容</label>
+        <textarea id="inc-8-detail" placeholder="どのような関わりが、誰と誰の間で起きたか。職員の対応を記入。"></textarea>
+        <label>継続支援・上長報告の必要性</label>
+        <select id="inc-8-level"><option>なし</option><option>要観察</option><option>上長へ報告</option><option>外部機関連携</option></select>
+      </div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-9" onchange="toggleInc('9',this.checked)">
+        <label for="inc-9">虐待・ネグレクト・家庭内暴力が疑われるサインがあった</label>
+        <span class="inc-tag tag-rights">権利</span>
+      </div>
+      <div id="inc-9-box" class="inc-detail-box">
+        <label>観察内容・気になったこと</label>
+        <textarea id="inc-9-detail" placeholder="どのような言動・様子・傷・発言があったか。具体的に記入（主観ではなく事実ベースで）。"></textarea>
+        <label>対応・連携先</label>
+        <select id="inc-9-level"><option>要観察・記録継続</option><option>上長へ報告</option><option>児童相談所へ連絡</option><option>緊急対応（警察・救急）</option></select>
+      </div>
+
+      <div class="inc-section-label">🏠 施設・運営</div>
+
+      <div class="inc-check-row">
+        <input type="checkbox" id="inc-10" onchange="toggleInc('10',this.checked)">
+        <label for="inc-10">施設・設備の破損・紛失・衛生上の問題があった</label>
+        <span class="inc-tag tag-facility">施設</span>
+      </div>
+      <div id="inc-10-box" class="inc-detail-box">
+        <label>状況・箇所・対応内容</label>
+        <textarea id="inc-10-detail" placeholder="何が、どこで、どのような状態か。修繕・報告の対応を記入。"></textarea>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="field">
+          <label>インシデント補足・総括コメント</label>
+          <textarea id="inc-summary" placeholder="上記に収まらない内容、全体的なコメント、上長への申し送り事項など"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 入電・見学 -->
+  <div class="section" id="sec-phone">
+    <div class="section-header">
+      <div class="section-icon icon-blue">📞</div>
+      <span class="section-title">入電・見学記録</span>
+    </div>
+    <div class="section-body">
+      <div class="row col23">
+        <div class="field"><label>入電内容・対応</label><input type="text" id="call-detail" placeholder="例：保護者からの出欠確認、利用案内の問い合わせ"></div>
+        <div class="field"><label>入電件数</label><input type="number" min="0" value="0" id="call-count"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="row col4">
+        <div class="field"><label>見学の有無</label>
+          <select id="visit-yn"><option value="なし">なし</option><option value="あり">あり</option></select>
+        </div>
+        <div class="field"><label>見学人数</label><input type="number" min="0" value="0" id="visit-count"></div>
+        <div class="field" style="grid-column:span 2"><label>対応内容・申込書渡したか</label><input type="text" id="visit-detail" placeholder="例：施設案内・申込書渡し済み、後日郵送"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引き継ぎ -->
+  <div class="section" id="sec-handover">
+    <div class="section-header">
+      <div class="section-icon icon-gray">📝</div>
+      <span class="section-title">引き継ぎ事項</span>
+    </div>
+    <div class="section-body">
+      <div class="field">
+        <textarea id="handover" placeholder="翌日担当者への連絡事項、気になったこと、継続観察が必要な生徒の情報など自由記入"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="submit-status" class="status-msg"></div>
+
+</main>
+</div>
+
+<script>
+const DAYS = ['日','月','火','水','木','金','土'];
+const today = new Date();
+document.getElementById('rec-date').value = today.toISOString().slice(0,10);
+document.getElementById('rec-day').value = DAYS[today.getDay()] + '曜日';
+document.getElementById('header-date').textContent =
+  today.getFullYear()+'年'+(today.getMonth()+1)+'月'+today.getDate()+'日（'+DAYS[today.getDay()]+'）';
+
+function updateDay() {
+  const d = new Date(document.getElementById('rec-date').value);
+  document.getElementById('rec-day').value = DAYS[d.getDay()]+'曜日';
+}
+
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// 来室者
+let vCount=0;
+function addVisitor() {
+  vCount++;
+  const id='vr'+vCount;
+  const tr=document.createElement('tr'); tr.id=id;
+  tr.innerHTML=`
+    <td><input type="text" class="vname" placeholder="利用者名"></td>
+    <td><select class="vtype" onchange="calcTotals()">
+      <option value="申込済">申込済</option><option value="新規">新規</option>
+    </select></td>
+    <td><input type="text" class="vnote" placeholder="備考"></td>
+    <td><button class="btn-del" onclick="document.getElementById('${id}').remove();calcTotals()" title="削除">×</button></td>`;
+  document.getElementById('visitor-list').appendChild(tr);
+  calcTotals();
+}
+function calcTotals() {
+  const rows=document.querySelectorAll('#visitor-list tr');
+  let total=rows.length,newC=0,regC=0;
+  rows.forEach(r=>{ const s=r.querySelector('.vtype'); if(s&&s.value==='新規') newC++; else regC++; });
+  document.getElementById('total-all').textContent=total;
+  document.getElementById('total-new').textContent=newC;
+  document.getElementById('total-reg').textContent=regC;
+}
+
+// 新規来室者
+let nvCount=0;
+function addNewVisitor() {
+  nvCount++;
+  const id='nvr'+nvCount;
+  const tr=document.createElement('tr'); tr.id=id;
+  tr.innerHTML=`
+    <td><input type="text" class="nvname" placeholder="利用者名"></td>
+    <td><select class="nvdoc">
+      <option>申込書渡し済</option><option>未渡し</option><option>後日郵送</option>
+    </select></td>
+    <td><input type="text" class="nvnote" placeholder="備考・対応メモ"></td>
+    <td><button class="btn-del" onclick="document.getElementById('${id}').remove()" title="削除">×</button></td>`;
+  document.getElementById('new-visitor-list').appendChild(tr);
+}
+
+// 寄付
+let dCount=0;
+function addDonation() {
+  dCount++;
+  const id='dn'+dCount;
+  const tr=document.createElement('tr'); tr.id=id;
+  tr.innerHTML=`
+    <td><input type="text" class="ddonor" placeholder="寄付者・団体名"></td>
+    <td><select class="dtype">
+      <option>食品・食材</option><option>日用品・消耗品</option>
+      <option>文具・教材</option><option>衣類・生活用品</option>
+      <option>現金</option><option>その他</option>
+    </select></td>
+    <td><input type="text" class="ditem" placeholder="品目・内容"></td>
+    <td><input type="text" class="dqty" placeholder="数量・金額"></td>
+    <td><input type="text" class="dnote" placeholder="お礼の方法・その他"></td>
+    <td><button class="btn-del" onclick="document.getElementById('${id}').remove()" title="削除">×</button></td>`;
+  document.getElementById('donation-list').appendChild(tr);
+}
+
+// 食事計算
+function calcMeals() {
+  const made=parseInt(document.getElementById('meal-made').value)||0;
+  const used=parseInt(document.getElementById('meal-users').value)||0;
+  document.getElementById('meal-left').value=Math.max(0,made-used)+' 食';
+}
+
+// 会話記録
+let cCount=0;
+function addConv() {
+  cCount++;
+  const id='cv'+cCount;
+  const div=document.createElement('div'); div.id=id; div.className='conv-card';
+  div.innerHTML=`
+    <button class="btn-del conv-card-del" onclick="document.getElementById('${id}').remove()" title="削除">×</button>
+    <div class="conv-card-header">
+      <input type="text" placeholder="生徒名" class="cname" style="width:130px">
+      <select class="ccat" style="flex:1">
+        <option>雑談・様子伺い</option><option>学習相談</option><option>進路相談</option>
+        <option>家庭の悩み</option><option>友人関係</option><option>体調・メンタル</option><option>その他</option>
+      </select>
+    </div>
+    <textarea class="cbody" placeholder="会話内容の概要（具体的に記入するほど引き継ぎに活用できます）"></textarea>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap">継続支援</span>
+      <select class="cfollow follow" style="flex:1">
+        <option>不要</option><option>要観察</option>
+        <option>要フォロー（次回声かけ）</option><option>保護者連絡</option><option>外部機関連携</option>
+      </select>
+    </div>`;
+  document.getElementById('conv-list').appendChild(div);
+}
+
+// インシデント
+function toggleInc(type,show) {
+  document.getElementById('inc-'+type+'-box').style.display=show?'block':'none';
+}
+
+// データ収集
+function getVisitors() {
+  return Array.from(document.querySelectorAll('#visitor-list tr')).map(r=>({
+    name:(r.querySelector('.vname')||{}).value||'',
+    type:(r.querySelector('.vtype')||{}).value||'',
+    note:(r.querySelector('.vnote')||{}).value||''
+  }));
+}
+function getDonations() {
+  return Array.from(document.querySelectorAll('#donation-list tr')).map(r=>({
+    donor:(r.querySelector('.ddonor')||{}).value||'',
+    type:(r.querySelector('.dtype')||{}).value||'',
+    item:(r.querySelector('.ditem')||{}).value||'',
+    qty:(r.querySelector('.dqty')||{}).value||'',
+    note:(r.querySelector('.dnote')||{}).value||''
+  }));
+}
+function getConvs() {
+  return Array.from(document.querySelectorAll('#conv-list .conv-card')).map(r=>({
+    name:(r.querySelector('.cname')||{}).value||'',
+    cat:(r.querySelector('.ccat')||{}).value||'',
+    body:(r.querySelector('.cbody')||{}).value||'',
+    follow:(r.querySelector('.cfollow')||{}).value||''
+  }));
+}
+
+// 送信
+async function submitForm() {
+  const url='https://script.google.com/macros/s/AKfycbzzPh3mTm9E8R_RZZajJpETa6I1bgpjCNW_2hZdgGuGfi-VCLaHNi7uk_zflPTb7u4H/exec';
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='送信中...';
+  const payload={
+    ts:new Date().toLocaleString('ja-JP'),
+    date:document.getElementById('rec-date').value,
+    day:document.getElementById('rec-day').value,
+    staff:document.getElementById('staff').value,
+    openTime:document.getElementById('open-time').value,
+    visitors:getVisitors(),
+    mealUsers:document.getElementById('meal-users').value,
+    mealMade:document.getElementById('meal-made').value,
+    mealLeft:document.getElementById('meal-left').value,
+    buyItems:document.getElementById('buy-items').value,
+    buyCost:document.getElementById('buy-cost').value,
+    activity:document.getElementById('activity').value,
+    activityCount:document.getElementById('activity-count').value,
+    totalAll:document.getElementById('total-all').textContent,
+    totalNew:document.getElementById('total-new').textContent,
+    totalReg:document.getElementById('total-reg').textContent,
+    donations:getDonations(),
+    convs:getConvs(),
+    callCount:document.getElementById('call-count').value,
+    callDetail:document.getElementById('call-detail').value,
+    visitYn:document.getElementById('visit-yn').value,
+    visitCount:document.getElementById('visit-count').value,
+    visitDetail:document.getElementById('visit-detail').value,
+    inc1:document.getElementById('inc-1').checked,
+    inc2:document.getElementById('inc-2').checked,
+    inc3:document.getElementById('inc-3').checked,
+    inc4:document.getElementById('inc-4').checked,
+    inc5:document.getElementById('inc-5').checked,
+    inc6:document.getElementById('inc-6').checked,
+    inc7:document.getElementById('inc-7').checked,
+    inc8:document.getElementById('inc-8').checked,
+    inc9:document.getElementById('inc-9').checked,
+    inc10:document.getElementById('inc-10').checked,
+    incSummary:document.getElementById('inc-summary').value,
+    handover:document.getElementById('handover').value
+  };
+  try {
+    const res=await fetch(url,{method:'POST',body:JSON.stringify(payload)});
+    const json=await res.json();
+    if(json.status==='ok') showMsg('submit-status','✓ スプレッドシートに保存しました','ok');
+    else showMsg('submit-status','エラー: '+(json.message||'不明'),'err');
+  } catch(e) {
+    showMsg('submit-status','送信エラー。GAS URLを確認してください。','err');
+  }
+  btn.disabled=false;
+  btn.textContent='📥 スプレッドシートに保存';
+}
+
+function showMsg(id,msg,type) {
+  const el=document.getElementById(id);
+  el.textContent=msg;
+  el.className='status-msg '+(type==='ok'?'status-ok':'status-err');
+  el.style.display='block';
+  setTimeout(()=>el.style.display='none',5000);
+}
+</script>
+</body>
+</html>
